@@ -22,7 +22,8 @@ const FILE_SYSTEM = {
   "/about": { type: "dir", children: ["bio.txt", "skills.txt"] },
   "/about/bio.txt": { type: "file", content: "I build systems that turn ideas into automated income.. thats all." },
   "/about/skills.txt": { type: "file", content: "Expertise: Full-stack Architecture, Vibe Coding, Domain Engineering." },
-  "/projects": { type: "dir", children: ["etravelapp.com", "orderimo.com", "siteforbidden.com"] },
+  "/projects": { type: "dir", children: ["plurino.com", "etravelapp.com", "orderimo.com", "siteforbidden.com"] },
+  "/projects/plurino.com": { type: "file", content: "Plurino: Vibe Coding software agency." },
   "/projects/etravelapp.com": { type: "file", content: "eTravelApp: AI-driven itinerary generation." },
   "/projects/orderimo.com": { type: "file", content: "Orderimo: High-conversion social commerce." },
   "/projects/siteforbidden.com": { type: "file", content: "SiteForbidden: Automated income experimentation." },
@@ -87,6 +88,7 @@ const App = () => {
   const [historyIdx, setHistoryIdx] = useState(-1);
   const [isHacked, setIsHacked] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [hasRunAuto, setHasRunAuto] = useState(false);
 
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -181,6 +183,17 @@ const App = () => {
   useEffect(() => {
     document.body.className = theme;
   }, [theme]);
+
+  useEffect(() => {
+    if (!booting && !hasRunAuto) {
+      setHasRunAuto(true);
+      const urlParams = new URLSearchParams(window.location.search);
+      const autoCmd = urlParams.get('cmd');
+      if (autoCmd) {
+         setTimeout(() => handleCommand(autoCmd), 400);
+      }
+    }
+  }, [booting, hasRunAuto]);
 
   const handleCommand = (cmd) => {
     const fullCmd = cmd.trim();
@@ -399,7 +412,7 @@ const App = () => {
         break;
 
       case 'projects':
-        output = "KCX VOYAGER PROJECTS:\n- etravelapp.com\n- orderimo.com\n- siteforbidden.com";
+        output = "KCX VOYAGER PROJECTS:\n- plurino.com\n- etravelapp.com\n- orderimo.com\n- siteforbidden.com";
         break;
         
       case 'date':
@@ -463,6 +476,30 @@ const App = () => {
     }
   };
 
+  const getSuggestions = () => {
+    if (!input) return [];
+    
+    // Check if space ends the string
+    let parts = input.trimStart().split(' ');
+    if (input.endsWith(' ')) parts.push('');
+
+    if (parts.length === 1 && parts[0].length > 0) {
+      return AVAILABLE_COMMANDS.filter(c => c.startsWith(parts[0]) && c !== parts[0]).slice(0, 5);
+    } 
+    if (parts.length === 2) {
+      if (['cd', 'cat'].includes(parts[0])) {
+         const children = FILE_SYSTEM[path]?.children || [];
+         return children.filter(c => c.startsWith(parts[1]) && c !== parts[1]).slice(0, 5);
+      }
+      if (parts[0] === 'theme') {
+         return VALID_THEMES.filter(t => t.startsWith(parts[1]) && t !== parts[1]);
+      }
+    }
+    return [];
+  };
+
+  const suggestions = getSuggestions();
+
   if (booting) {
     return (
       <div className="min-h-screen bg-theme-bg text-theme-fg font-mono p-10 flex flex-col justify-start theme-hacker">
@@ -496,19 +533,26 @@ const App = () => {
           </div>
         ))}
 
-        <div className="flex items-center text-sm md:text-base flex-wrap">
+        <div className="flex items-center text-sm md:text-base flex-wrap relative">
           <span className="text-theme-accent mr-2">{USER}@{currentHost}</span>
           <span className="text-theme-sys mr-2">:{path}$</span>
-          <input
-            ref={inputRef}
-            autoFocus
-            className="bg-transparent border-none outline-none text-theme-fg flex-grow caret-theme-fg"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            spellCheck="false"
-            autoComplete="off"
-          />
+          <div className="flex-grow flex flex-col relative w-full sm:w-auto mt-1 sm:mt-0">
+            <input
+              ref={inputRef}
+              autoFocus
+              className="bg-transparent border-none outline-none text-theme-fg w-full caret-theme-fg"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              spellCheck="false"
+              autoComplete="off"
+            />
+            {suggestions.length > 0 && (
+              <div className="absolute top-full mt-1 left-0 text-sm text-theme-sys opacity-80 bg-theme-bg/95 px-3 py-1 border border-theme-sys/40 flex flex-wrap gap-4 z-50 rounded select-none shadow-xl">
+                 {suggestions.map(s => <span key={s} className="hover:text-theme-accent inline-block">{s}</span>)}
+              </div>
+            )}
+          </div>
         </div>
         <div ref={scrollRef} className="pb-10" />
       </div>
