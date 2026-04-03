@@ -2,11 +2,82 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  background-color: #020617; /* slate-950 */
+@layer base {
+  :root {
+    --bg-color: #020617; /* slate-950 */
+    --text-color: #22c55e; /* green-500 */
+    --accent-color: #3b82f6; /* blue-500 */
+    --sys-color: #9ca3af; /* gray-400 */
+    --ghost-opacity: 1;
+    --font-glow: none;
+  }
+
+  /* Hacker (Default) */
+  .theme-hacker {
+    --bg-color: #020617;
+    --text-color: #22c55e;
+    --accent-color: #3b82f6;
+    --sys-color: #9ca3af;
+  }
+
+  /* Cyberpunk */
+  .theme-cyberpunk {
+    --bg-color: #0f091a;
+    --text-color: #f43f5e; /* rose-500 */
+    --accent-color: #06b6d4; /* cyan-500 */
+    --sys-color: #a855f7; /* purple-500 */
+    --font-glow: 0 0 8px rgba(244, 63, 94, 0.4);
+  }
+
+  /* Synthwave */
+  .theme-synthwave {
+    --bg-color: #1e1b4b; /* indigo-950 */
+    --text-color: #fcd34d; /* amber-300 */
+    --accent-color: #fb7185; /* rose-400 */
+    --sys-color: #818cf8; /* indigo-400 */
+    --font-glow: 0 0 5px rgba(252, 211, 77, 0.3);
+  }
+
+  /* Ghost */
+  .theme-ghost {
+    --bg-color: #000000;
+    --text-color: #e5e7eb; /* gray-200 */
+    --accent-color: #ffffff; /* white */
+    --sys-color: #6b7280; /* gray-500 */
+    --ghost-opacity: 0.8;
+    --font-glow: 0 0 10px rgba(255, 255, 255, 0.2);
+  }
 }
 
 body {
   margin: 0;
   overflow: hidden;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  text-shadow: var(--font-glow);
+  transition: background-color 0.5s ease;
 }
+
+/* Theme Utilities */
+.text-theme-fg { color: var(--text-color); }
+.text-theme-accent { color: var(--accent-color); }
+.text-theme-sys { color: var(--sys-color); }
+.bg-theme-bg { background-color: var(--bg-color); }
+.caret-theme-fg { caret-color: var(--text-color); }
+.border-theme-sys { border-color: var(--sys-color); }
+
+.opacity-ghost { opacity: var(--ghost-opacity); }
+
+@keyframes glitch {
+  0% { transform: translate(0) }
+  20% { transform: translate(-2px, 2px) }
+  40% { transform: translate(-2px, -2px) }
+  60% { transform: translate(2px, 2px) }
+  80% { transform: translate(2px, -2px) }
+  100% { transform: translate(0) }
+}
+.animate-glitch {
+  animation: glitch 0.2s cubic-bezier(.25, .46, .45, .94) both infinite;
+}
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
