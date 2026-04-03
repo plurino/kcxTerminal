@@ -4,6 +4,12 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  safelist: [
+    'theme-hacker',
+    'theme-cyberpunk',
+    'theme-synthwave',
+    'theme-ghost'
+  ],
   theme: {
     extend: {
       colors: {

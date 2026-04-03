@@ -20,12 +20,12 @@ Location: Ireland (IE)
 const FILE_SYSTEM = {
   "/": { type: "dir", children: ["about", "projects", "contact", "system"] },
   "/about": { type: "dir", children: ["bio.txt", "skills.txt"] },
-  "/about/bio.txt": { type: "file", content: "Kieran (KCX). Architect. Builder. Irish-based tech lead at Plurino Ltd." },
+  "/about/bio.txt": { type: "file", content: "I build systems that turn ideas into automated income.. thats all." },
   "/about/skills.txt": { type: "file", content: "Expertise: Full-stack Architecture, Vibe Coding, Domain Engineering." },
-  "/projects": { type: "dir", children: ["etravelapp.com", "orderimo.com", "rawpleasure.com"] },
+  "/projects": { type: "dir", children: ["etravelapp.com", "orderimo.com", "siteforbidden.com"] },
   "/projects/etravelapp.com": { type: "file", content: "eTravelApp: AI-driven itinerary generation." },
   "/projects/orderimo.com": { type: "file", content: "Orderimo: High-conversion social commerce." },
-  "/projects/rawpleasure.com": { type: "file", content: "RawPleasure: Premium aesthetic link-hubs." },
+  "/projects/siteforbidden.com": { type: "file", content: "SiteForbidden: Automated income experimentation." },
   "/contact": { type: "dir", children: ["email.txt"] },
   "/contact/email.txt": { type: "file", content: "Reach out: k@kcx.me" },
   "/system": { type: "dir", children: ["uptime.log", "network.status"] },
@@ -34,7 +34,7 @@ const FILE_SYSTEM = {
 };
 
 const VALID_THEMES = ['hacker', 'cyberpunk', 'synthwave', 'ghost'];
-const AVAILABLE_COMMANDS = ['help', 'ls', 'cd', 'cat', 'ssh', 'pulse', 'matrix', 'clear', 'sudo', 'whois', 'projects', 'theme', 'kcxfetch', 'hack', 'resume', 'mute', 'unmute'];
+const AVAILABLE_COMMANDS = ['help', 'ls', 'cd', 'cat', 'ssh', 'pulse', 'matrix', 'clear', 'sudo', 'whois', 'projects', 'theme', 'kcxfetch', 'hack', 'cv', 'mute', 'unmute', 'date', 'whoami'];
 
 // --- WEB AUDIO TYPING ENGINE ---
 let audioCtx = null;
@@ -201,12 +201,14 @@ const App = () => {
       case 'help':
         output = `Available Commands:
   ls          - List files
-  cd [dir]    - Change directory (e.g., 'cd ..' or 'cd about')
+  cd [dir]    - Change directory (type 'cd ..' to go back)
   cat [file]  - Read a file
   whois       - About Kieran
   projects    - My active ventures
   ssh         - Secure Tunnel to Plurino HQ
-  resume      - Display Professional CV
+  cv          - Display Professional CV
+  date        - Current system time
+  whoami      - Print active user
   pulse       - Check real-time network status
   matrix      - Toggle reality
   theme [opt] - Set OS theme (hacker, cyberpunk, synthwave, ghost)
@@ -304,31 +306,25 @@ const App = () => {
         );
         break;
         
-      case 'resume':
+      case 'cv':
         output = (
           <div className="border border-theme-sys p-4 w-full md:w-3/4 opacity-ghost my-4">
             <h1 className="text-2xl font-bold text-theme-accent mb-1 tracking-wider">KIERAN (KCX)</h1>
-            <div className="text-theme-fg mb-4 uppercase tracking-widest font-semibold border-b border-theme-sys pb-2">Architect // Builder // Tech Lead</div>
+            <div className="text-theme-fg mb-4 uppercase tracking-widest font-semibold border-b border-theme-sys pb-2">"I design and build automated systems that generate income."</div>
             
-            <h2 className="text-theme-accent font-bold mt-4 uppercase text-sm">EXPERIENCE</h2>
-            <div className="mt-2 mb-4">
-              <div className="flex justify-between items-baseline">
-                <span className="font-bold text-lg text-theme-fg">Tech Lead @ Plurino Ltd.</span>
-                <span className="text-theme-sys text-sm">Current</span>
-              </div>
-              <ul className="list-disc pl-5 text-sm mt-2 space-y-1 text-theme-sys marker:text-theme-accent">
-                <li>Architecting large scale Vibe Coding systems.</li>
-                <li>Pioneering automated domain engineering workflows.</li>
-                <li>Spearheaded full-stack implementation across multiple SaaS products.</li>
-              </ul>
+            <h2 className="text-theme-accent font-bold mt-4 uppercase text-sm">ABOUT</h2>
+            <div className="mt-2 mb-4 text-theme-sys text-sm space-y-1">
+              <div>I focus on creating scalable, automated income systems.</div>
+              <div>I use code, AI, and whatever tools are necessary to get something working &mdash; then refine and scale it.</div>
             </div>
             
-            <h2 className="text-theme-accent font-bold mt-4 uppercase text-sm">VENTURES</h2>
-            <div className="mt-2 mb-4 text-sm text-theme-sys space-y-2">
-              <div><strong className="text-theme-fg">eTravelApp</strong>: AI itinerary generation engine.</div>
-              <div><strong className="text-theme-fg">Orderimo</strong>: High-conversion social commerce.</div>
-              <div><strong className="text-theme-fg">RawPleasure</strong>: Aesthetic premium link-hubs.</div>
-            </div>
+            <h2 className="text-theme-accent font-bold mt-4 uppercase text-sm">CV</h2>
+            <ul className="list-disc pl-5 text-sm mt-2 mb-2 space-y-1 text-theme-sys marker:text-theme-accent">
+              <li>Built and tested multiple automated online income systems</li>
+              <li>Combine coding with AI tools to accelerate execution</li>
+              <li>Focus on simplicity, leverage, and scalability</li>
+              <li>Iterate fast, keep what works, discard what doesn't</li>
+            </ul>
           </div>
         );
         break;
@@ -403,7 +399,15 @@ const App = () => {
         break;
 
       case 'projects':
-        output = "KCX VOYAGER PROJECTS:\n- etravelapp.com\n- orderimo.com\n- rawpleasure.com\n- plurino.com";
+        output = "KCX VOYAGER PROJECTS:\n- etravelapp.com\n- orderimo.com\n- siteforbidden.com";
+        break;
+        
+      case 'date':
+        output = new Date().toString();
+        break;
+        
+      case 'whoami':
+        output = USER;
         break;
 
       default:
