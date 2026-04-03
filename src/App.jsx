@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Shield, Zap, Globe, Cpu, Terminal as TerminalIcon, Folder, FileText } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Shield, Zap, Globe, Cpu, Terminal as TerminalIcon, Folder, FileText, Upload } from 'lucide-react';
 
 // --- CONFIGURATION ---
 const USER = "guest";
@@ -34,7 +34,38 @@ const FILE_SYSTEM = {
 };
 
 const VALID_THEMES = ['hacker', 'cyberpunk', 'synthwave', 'ghost'];
-const AVAILABLE_COMMANDS = ['help', 'ls', 'cd', 'cat', 'ssh', 'pulse', 'matrix', 'clear', 'sudo', 'whois', 'projects', 'theme', 'kcxfetch', 'hack'];
+const AVAILABLE_COMMANDS = ['help', 'ls', 'cd', 'cat', 'ssh', 'pulse', 'matrix', 'clear', 'sudo', 'whois', 'projects', 'theme', 'kcxfetch', 'hack', 'resume', 'mute', 'unmute'];
+
+// --- WEB AUDIO TYPING ENGINE ---
+let audioCtx = null;
+const playThock = (muted) => {
+  if (muted) return;
+  try {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    // Simulate low, quick mechanical thock
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(80 + Math.random() * 40, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+    
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.05);
+  } catch (e) {
+    // Ignore audio errors if browser blocks autoplay randomly
+  }
+};
 
 const App = () => {
   const [booting, setBooting] = useState(true);
@@ -47,14 +78,63 @@ const App = () => {
   const [currentHost, setCurrentHost] = useState(LOCAL_HOST);
   const [netData, setNetData] = useState(null);
   
+  // Drag Drop
+  const [isDragging, setIsDragging] = useState(false);
+
   // New features state
   const [theme, setTheme] = useState('theme-hacker');
   const [cmdHistory, setCmdHistory] = useState([]);
   const [historyIdx, setHistoryIdx] = useState(-1);
   const [isHacked, setIsHacked] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
 
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+
+  // --- DRAG AND DROP HANDLERS ---
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      const fileName = file.name.replace(/\s+/g, '_'); // sanitize purely for aesthetic
+      
+      // Inject directly into FILE_SYSTEM object (not strictly React state, but functionally fine here)
+      if (!FILE_SYSTEM["/"].children.includes(fileName)) {
+        FILE_SYSTEM["/"].children.push(fileName);
+      }
+      
+      FILE_SYSTEM["/" + fileName] = {
+        type: "file",
+        content: `[System Warning]\nThis file (${fileName}) was uploaded to the local cache via Drag-and-Drop.\nSize: ${file.size} bytes.\nPermissions: -rw-r--r--`
+      };
+
+      const entry = { type: 'output', content: `[UPLOAD DAEMON] Received File: '${fileName}'. Saved to root directory.`, time: new Date().toLocaleTimeString() };
+      setHistory(prev => [...prev, entry]);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('dragleave', handleDragLeave);
+    window.addEventListener('drop', handleDrop);
+    return () => {
+      window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('dragleave', handleDragLeave);
+      window.removeEventListener('drop', handleDrop);
+    };
+  }, [handleDragOver, handleDragLeave, handleDrop]);
 
   // --- BOOT SEQUENCE ---
   useEffect(() => {
@@ -99,7 +179,6 @@ const App = () => {
   }, [history, bootLines]);
   
   useEffect(() => {
-    // Apply theme class to body for background transition
     document.body.className = theme;
   }, [theme]);
 
@@ -127,10 +206,12 @@ const App = () => {
   whois       - About Kieran
   projects    - My active ventures
   ssh         - Secure Tunnel to Plurino HQ
+  resume      - Display Professional CV
   pulse       - Check real-time network status
   matrix      - Toggle reality
   theme [opt] - Set OS theme (hacker, cyberpunk, synthwave, ghost)
   kcxfetch    - Display system specs
+  mute/unmute - Toggle keyboard acoustics
   clear       - Wipe terminal
   exit        - Terminate session
   sudo        - [RESTRICTED]`;
@@ -222,15 +303,57 @@ const App = () => {
           </div>
         );
         break;
+        
+      case 'resume':
+        output = (
+          <div className="border border-theme-sys p-4 w-full md:w-3/4 opacity-ghost my-4">
+            <h1 className="text-2xl font-bold text-theme-accent mb-1 tracking-wider">KIERAN (KCX)</h1>
+            <div className="text-theme-fg mb-4 uppercase tracking-widest font-semibold border-b border-theme-sys pb-2">Architect // Builder // Tech Lead</div>
+            
+            <h2 className="text-theme-accent font-bold mt-4 uppercase text-sm">EXPERIENCE</h2>
+            <div className="mt-2 mb-4">
+              <div className="flex justify-between items-baseline">
+                <span className="font-bold text-lg text-theme-fg">Tech Lead @ Plurino Ltd.</span>
+                <span className="text-theme-sys text-sm">Current</span>
+              </div>
+              <ul className="list-disc pl-5 text-sm mt-2 space-y-1 text-theme-sys marker:text-theme-accent">
+                <li>Architecting large scale Vibe Coding systems.</li>
+                <li>Pioneering automated domain engineering workflows.</li>
+                <li>Spearheaded full-stack implementation across multiple SaaS products.</li>
+              </ul>
+            </div>
+            
+            <h2 className="text-theme-accent font-bold mt-4 uppercase text-sm">VENTURES</h2>
+            <div className="mt-2 mb-4 text-sm text-theme-sys space-y-2">
+              <div><strong className="text-theme-fg">eTravelApp</strong>: AI itinerary generation engine.</div>
+              <div><strong className="text-theme-fg">Orderimo</strong>: High-conversion social commerce.</div>
+              <div><strong className="text-theme-fg">RawPleasure</strong>: Aesthetic premium link-hubs.</div>
+            </div>
+          </div>
+        );
+        break;
 
       case 'ssh':
+        // FIX: Push history instantly to fix display bug
+        setHistory(prev => [...prev, entry]);
+        setInput('');
         setIsSSH(true);
         setTimeout(() => {
           setIsSSH(false);
           setCurrentHost(REMOTE_HOST);
           setHistory(prev => [...prev, { type: 'output', content: "TUNNEL ESTABLISHED.\nConnected to:\nPlurino_Internal_Node_01\nEncryption: RSA-4096-AES", time: new Date().toLocaleTimeString() }]);
         }, 3000);
-        return;
+        return; // Early return to prevent normal history pipeline double-push
+
+      case 'mute':
+        setIsMuted(true);
+        output = "Acoustic keyboard feedback DISABLED.";
+        break;
+
+      case 'unmute':
+        setIsMuted(false);
+        output = "Acoustic keyboard feedback ENABLED.";
+        break;
 
       case 'pulse':
         if (netData) {
@@ -292,6 +415,9 @@ const App = () => {
   };
   
   const handleKeyDown = (e) => {
+    // Sound engine trigger
+    playThock(isMuted);
+
     if (e.key === 'Enter') {
       handleCommand(input);
     } else if (e.key === 'ArrowUp') {
@@ -335,7 +461,7 @@ const App = () => {
 
   if (booting) {
     return (
-      <div className="min-h-screen bg-black text-theme-fg font-mono p-10 flex flex-col justify-start theme-hacker">
+      <div className="min-h-screen bg-theme-bg text-theme-fg font-mono p-10 flex flex-col justify-start theme-hacker">
         {bootLines.map((line, i) => (
           <div key={i} className="mb-1">{line}</div>
         ))}
@@ -383,7 +509,7 @@ const App = () => {
         <div ref={scrollRef} className="pb-10" />
       </div>
 
-      {/* SSH Handshake Overlay */}
+      {/* SHH Handshake Overlay */}
       {isSSH && (
         <div className="absolute inset-0 bg-theme-bg/95 z-50 flex flex-col items-center justify-center p-6 text-center text-theme-fg">
           <Shield className="w-12 h-12 mb-6 text-theme-accent animate-pulse" />
@@ -402,6 +528,14 @@ const App = () => {
       {isHacked && (
         <div className="absolute inset-0 bg-red-900/90 z-50 flex flex-col items-center justify-center p-6 text-center text-white animate-pulse">
           <div className="text-5xl font-black tracking-widest mb-4 rotate-12 animate-bounce">SYSTEM FAILURE</div>
+        </div>
+      )}
+
+      {/* Drag & Drop Visual Indication */}
+      {isDragging && (
+        <div className="absolute inset-0 bg-theme-accent/20 z-40 border-4 border-dashed border-theme-accent flex flex-col items-center justify-center">
+          <Upload className="w-24 h-24 text-theme-accent mb-4 animate-bounce" />
+          <div className="text-3xl text-theme-accent font-bold tracking-widest uppercase">Drop File to Upload</div>
         </div>
       )}
 
